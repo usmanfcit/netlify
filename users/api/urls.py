@@ -1,13 +1,14 @@
-from django.urls import path
-
+from django.urls import path, include
 from . import views
+from rest_framework.routers import DefaultRouter
+from .views import UserViewSet
+
+router = DefaultRouter()
+router.register(r"", UserViewSet)
 
 urlpatterns = [
-    path("", views.UserListingAPIView.as_view()),
+    # path("", views.UserListingAPIView.as_view()),
     path("login/", views.LoginAPIView.as_view()),
     path("register/", views.UserRegistrationAPIView.as_view()),
-    path("user/<int:pk>", views.UserDetailAPIView.as_view()),
-    path("user/delete/<int:pk>", views.UserDeleteAPIView.as_view()),
-    path("user/update/<int:pk>", views.UserUpdateAPIView.as_view()),
-    path("user/update/<int:pk>", views.UserUpdateAPIView.as_view()),
+    path("", include(router.urls))
 ]
