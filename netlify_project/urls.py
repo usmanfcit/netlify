@@ -20,5 +20,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('users.api.urls')),
-    path('api/netlify_movies/', include('netlify_movies.api.urls')),
+    path('api/netlify-movies/', include('netlify_movies.api.urls')),
 ]

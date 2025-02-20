@@ -6,3 +6,6 @@ djangorestframework_simplejwt==5.4.0
 PyJWT==2.10.1
 rest-framework-simplejwt==0.0.2
 sqlparse==0.5.3
+python-decouple==3.8
+pytest
+pytest-django

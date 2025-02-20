@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from .serializers import MoviesSerializer
-from netlify_movies.models import Netflix
+from ..models import Netflix
 from .filters import MovieFilter
 from users.api.permissions import IsStaff
 
@@ -18,6 +18,7 @@ class ListMoviesAPIView(generics.ListAPIView):
     queryset = Netflix.objects.all()
     serializer_class = MoviesSerializer
     filter_backends = [DjangoFilterBackend]
+    permission_classes = [AllowAny]
     filterset_class = MovieFilter
 
 class DeleteMoviesAPIView(generics.DestroyAPIView):
