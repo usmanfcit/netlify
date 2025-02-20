@@ -22,3 +22,7 @@ netlify/.env/
 
 # Logs
 *.log
+
+.env
+.gitignore
+

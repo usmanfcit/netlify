@@ -1,53 +1,70 @@
 import pytest
 
+from .factories import MovieFactory
+
 
 @pytest.mark.django_db
-def test_movie_creation(db, auth_client):
-    movie = {
-        "movie_name": "Titanic-2",
-        "category": "Adventure",
-        "description": "Random",
-        "year_released": "2001",
-        "director": "El Pacino",
-        "rating": 5.2
+def test_movie_creation(staff_auth_client):
+    movie = MovieFactory.build()
+    movie_data = {
+        "movie_name": movie.movie_name,
+        "category": movie.category,
+        "description": movie.description,
+        "year_released": movie.year_released,
+        "director": movie.director,
+        "rating": movie.rating,
     }
-    response = auth_client.post("/api/netlify-movies/create/", movie, content_type="application/json")
-
+    response = staff_auth_client.post("/api/netlify-movies/create/", movie_data, content_type="application/json")
     assert response.status_code == 201
 
 
+@pytest.mark.django_db
 def test_movie_creation_fail_unauthenticated(db, client):
-    movie = {
-        "movie_name": "Titanic-2",
-        "category": "Adventure",
-        "description": "Random",
-        "year_released": "2001",
-        "director": "El Pacino",
-        "rating": 5.2
+    movie = MovieFactory.build()
+    movie_data = {
+        "movie_name": movie.movie_name,
+        "category": movie.category,
+        "description": movie.description,
+        "year_released": movie.year_released,
+        "director": movie.director,
+        "rating": movie.rating,
     }
-    response = client.post("/api/netlify-movies/create/", movie, content_type="application/json")
+    response = client.post("/api/netlify-movies/create/", movie_data, content_type="application/json")
 
     assert response.status_code == 401
 
 
 @pytest.mark.django_db
-def test_movie_listing(db, client):
+def test_movie_listing(db, auth_client):
+    MovieFactory.create_batch(3)
+    client, _ = auth_client(email="test@gmail.com")
     response = client.get("/api/netlify-movies/")
-
     assert response.status_code == 200
     assert isinstance(response.data, list)
 
 
 @pytest.mark.django_db
-def test_retrieve_movie(auth_client, movie):
-    response = auth_client.get("/api/netlify-movies/get/1")
+def test_movie_listing_empty(db, auth_client):
+    client, _ = auth_client(email="test@gmail.com")
+    response = client.get("/api/netlify-movies/")
+    assert response.status_code == 404
+    assert not isinstance(response.data, list)
+
+
+@pytest.mark.django_db
+def test_retrieve_movie(auth_client):
+    client, _ = auth_client(email="test@gmail.com")
+    movie = MovieFactory.create()
+    response = client.get(f"/api/netlify-movies/get/{movie.id}")
     assert response.status_code == 200
     assert "movie_name" in response.data
 
 
 @pytest.mark.django_db
-def test_retrieve_movie_fail(client, movie):
-    response = client.get("/api/netlify-movies/get/1")
+def test_retrieve_movie_fail(client):
+    movie = MovieFactory.create()
+
+    response = client.get(f"/api/netlify-movies/get/{movie.id}")
 
     assert response.status_code == 401
     assert response.data["detail"] == "Authentication credentials were not provided."
@@ -55,48 +72,62 @@ def test_retrieve_movie_fail(client, movie):
     assert "category" not in response.data
     assert "description" not in response.data
 
-@pytest.mark.django_db
-def test_delete_movie(auth_client, client, movie):
 
-    response = auth_client.delete("/api/netlify-movies/delete/1")
-    response_client = auth_client.delete("/api/netlify-movies/delete/3")    # Unauthorized
+@pytest.mark.django_db
+def test_delete_movie(staff_auth_client):
+    movie = MovieFactory.create()
+    response = staff_auth_client.delete(f"/api/netlify-movies/delete/{movie.id}")
 
     assert response.status_code == 200
-    assert response_client.status_code == 404
 
 
 @pytest.mark.django_db
-def test_delete_movie_fail(client, movie):
+def test_delete_movie_fail_unauthorized(auth_client):
+    movie = MovieFactory.create()
+    client, _ = auth_client(email="test@gmail.com")
+    response = client.delete(f"/api/netlify-movies/delete/{movie.id}")    # Unauthorized
 
-    response = client.delete("/api/netlify-movies/delete/1")    # Unauthorized
-    assert response.status_code == 401
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
-def test_update_movie(auth_client, movie):
+def test_delete_movie_fail_not_found(staff_auth_client):
+    movie = MovieFactory.create()
+    response = staff_auth_client.delete(f"/api/netlify-movies/delete/2")    # Not found
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_update_movie(staff_auth_client):
+    movie = MovieFactory.create()
     payload = dict(
-            movie_name="Titanic-4",
-            category="Mystery",
-            description= "Random",
-            year_released= "2001",
-            director= "El Pacino",
-            rating= 9.8
+        movie_name="Titanic-4",
+        category="Mystery",
+        description="Random",
+        year_released="2001",
+        director="El Pacino",
+        rating=9.8
     )
-    response = auth_client.put("/api/netlify-movies/update/1", data=payload, content_type="application/json")
+    response = staff_auth_client.put(f"/api/netlify-movies/update/{movie.id}", data=payload,
+                                     content_type="application/json")
 
     assert response.status_code == 200
     assert "movie_name" in response.data
 
 
 @pytest.mark.django_db
-def test_update_movie_fail(auth_client, movie):
+def test_update_movie_fail(staff_auth_client):
+    movie = MovieFactory.create()
+
     payload = dict(
-            category="Mystery",
-            description= "Random",
-            year_released= "2001",
-            director= "El Pacino",
-            rating= 9.8
+        category="Mystery",
+        description="Random",
+        year_released="2001",
+        director="El Pacino",
+        rating=9.8
     )
-    response = auth_client.put("/api/netlify-movies/update/1", data=payload, content_type="application/json")
+    response = staff_auth_client.put(f"/api/netlify-movies/update/{movie.id}", data=payload,
+                                     content_type="application/json")
 
     assert response.status_code == 400
