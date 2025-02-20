@@ -22,7 +22,6 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = (IsStaff,)
     serializer_class = UserSerializer
 
-
 class LoginAPIView(TokenObtainPairView):
     permission_classes = (AllowAny,)
     serializer_class = MyTokenObtainPairSerializer
